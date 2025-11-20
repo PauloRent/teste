@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1a1a;
+            border: 3px solid #00FF7F;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 255, 127, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 50px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #00FF7F;
+            font-size: 38px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(0, 255, 127, 0.5);
+        }
+
+        .header p {
+            color: #ffffff;
+            font-size: 18px;
+        }
+
+        .progress-container {
+            margin-bottom: 35px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #00FF7F;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #00FF7F;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00FF7F;
+            width: 0%;
+            transition: width 0.4s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 20px;
+            color: #00FF7F;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.3);
+        }
+
+        .question-container {
+            margin-bottom: 35px;
+        }
+
+        .question-number {
+            color: #00FF7F;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .option {
+            background: #2a2a2a;
+            border: 2px solid #00FF7F;
+            border-radius: 12px;
+            padding: 18px 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+        }
+
+        .option:hover:not(.correct):not(.incorrect):not(.disabled) {
+            background: #1a3329;
+            border-color: #00FF7F;
+            transform: translateX(6px);
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
+        }
+
+        .option input[type="radio"] {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: #00FF7F;
+        }
+
+        .option label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 17px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .option.correct {
+            background: #00FF7F;
+            border-color: #00FF7F;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .option.correct label {
+            color: #000000;
+            font-weight: 700;
+        }
+
+        .option.incorrect {
+            background: #ff0000;
+            border-color: #ff0000;
+            animation: incorrectShake 0.5s ease;
+        }
+
+        .option.incorrect label {
+            color: #ffffff;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .option.disabled input[type="radio"],
+        .option.disabled label {
+            cursor: not-allowed;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .option-icon {
+            font-size: 24px;
+            font-weight: 700;
+            display: none;
+        }
+
+        .option.correct .option-icon {
+            display: block;
+            color: #000000;
+        }
+
+        .option.incorrect .option-icon {
+            display: block;
+            color: #ffffff;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 10px;
+            display: none;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback.correct {
+            background: #00FF7F;
+            color: #000000;
+            border: 2px solid #00FF7F;
+        }
+
+        .feedback.incorrect {
+            background: #ff0000;
+            color: #ffffff;
+            border: 2px solid #ff0000;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 28px;
+            border: 2px solid #00FF7F;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-next {
+            background: #00FF7F;
+            color: #000000;
+            display: none;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 255, 127, 0.5);
+        }
+
+        .btn-next.show {
+            display: block;
+        }
+
+        .result-container {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .result-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 32px;
+            color: #00FF7F;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0, 255, 127, 0.5);
+        }
+
+        .result-score {
+            font-size: 80px;
+            font-weight: 700;
+            color: #00FF7F;
+            margin: 25px 0;
+            text-shadow: 0 0 30px rgba(0, 255, 127, 0.5);
+        }
+
+        .result-message {
+            font-size: 26px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .result-details {
+            background: #2a2a2a;
+            border: 2px solid #00FF7F;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 35px 0;
+        }
+
+        .result-details p {
+            font-size: 20px;
+            color: #ffffff;
+            margin: 12px 0;
+            font-weight: 600;
+        }
+
+        .result-details span {
+            color: #00FF7F;
+            font-size: 22px;
+        }
+
+        .review-section {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .review-title {
+            font-size: 28px;
+            color: #00FF7F;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
+        }
+
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .review-table th {
+            background: #00FF7F;
+            color: #000000;
+            padding: 15px;
+            text-align: left;
+            font-weight: 700;
+            border: 2px solid #00FF7F;
+        }
+
+        .review-table td {
+            padding: 15px;
+            border: 2px solid #00FF7F;
+            color: #ffffff;
+            vertical-align: top;
+        }
+
+        .review-table tr:nth-child(even) {
+            background: #2a2a2a;
+        }
+
+        .review-table tr:nth-child(odd) {
+            background: #1a1a1a;
+        }
+
+        .status-correct {
+            color: #00FF7F;
+            font-weight: 700;
+        }
+
+        .status-incorrect {
+            color: #ff0000;
+            font-weight: 700;
+        }
+
+        .question-number-cell {
+            font-weight: 700;
+            color: #00FF7F;
+        }
+
+        .btn-restart {
+            background: #00FF7F;
+            color: #000000;
+            padding: 18px 50px;
+            border: 2px solid #00FF7F;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 30px;
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 255, 127, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 25px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .question-text {
+                font-size: 19px;
+            }
+
+            .result-score {
+                font-size: 60px;
+            }
+
+            .result-title {
+                font-size: 26px;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .review-table {
+                font-size: 14px;
+            }
+
+            .review-table th,
+            .review-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Quiz Interativo</h1>
+            <p>Selecione uma alternativa para validar automaticamente</p>
+        </div>
+
+        <div id="quizSection">
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="questionCounter">Questão 1 de 15</span>
+                    <span id="progressPercentage">7%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="score-display" id="scoreDisplay">Pontuação: 0 / 15</div>
+
+            <div class="question-container">
+                <div class="question-number" id="questionNumber">Questão 1</div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+
+            <div class="button-container">
+                <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">Próxima Questão</button>
+            </div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title">Quiz Finalizado!</div>
+            <div class="result-score" id="finalScore"></div>
+            <div class="result-message" id="resultMessage"></div>
+            <div class="result-details">
+                <p>Respostas Corretas: <span id="correctCount"></span></p>
+                <p>Respostas Incorretas: <span id="incorrectCount"></span></p>
+                <p>Percentual de Acerto: <span id="percentage"></span>%</p>
+            </div>
+
+            <div class="review-section">
+                <h2 class="review-title">Revisão das Questões</h2>
+                <table class="review-table" id="reviewTable">
+                    <thead>
+                        <tr>
+                            <th>Questão</th>
+                            <th>Sua Resposta</th>
+                            <th>Status</th>
+                            <th>Explicação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn-restart" onclick="restartQuiz()">Refazer Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Qual é a capital do Brasil?",
+                options: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
+                correct: 2,
+                explanation: "Brasília é a capital federal do Brasil desde 1960, quando foi inaugurada pelo presidente Juscelino Kubitschek. A cidade foi planejada por Lúcio Costa e Oscar Niemeyer."
+            },
+            {
+                question: "Quem pintou a Mona Lisa?",
+                options: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Michelangelo"],
+                correct: 1,
+                explanation: "Leonardo da Vinci pintou a Mona Lisa entre 1503 e 1519. É uma das pinturas mais famosas do mundo e está exposta no Museu do Louvre, em Paris."
+            },
+            {
+                question: "Qual é o maior planeta do Sistema Solar?",
+                options: ["Terra", "Marte", "Júpiter", "Saturno"],
+                correct: 2,
+                explanation: "Júpiter é o maior planeta do Sistema Solar, com um diâmetro de aproximadamente 143.000 km. Ele é um gigante gasoso e possui mais de 79 luas conhecidas."
+            },
+            {
+                question: "Em que ano o homem pisou na Lua pela primeira vez?",
+                options: ["1965", "1969", "1972", "1975"],
+                correct: 1,
+                explanation: "Neil Armstrong e Buzz Aldrin pisaram na Lua em 20 de julho de 1969, durante a missão Apollo 11. Este foi um marco histórico na exploração espacial."
+            },
+            {
+                question: "Qual é o elemento químico representado pela letra O?",
+                options: ["Ouro", "Oxigênio", "Ósmio", "Carbono"],
+                correct: 1,
+                explanation: "O símbolo 'O' representa o Oxigênio na tabela periódica. É um elemento essencial para a vida e constitui cerca de 21% da atmosfera terrestre."
+            },
+            {
+                question: "Quem escreveu 'Dom Casmurro'?",
+                options: ["José de Alencar", "Machado de Assis", "Clarice Lispector", "Jorge Amado"],
+                correct: 1,
+                explanation: "Machado de Assis escreveu 'Dom Casmurro' em 1899. É considerado uma das maiores obras da literatura brasileira e conta a história de Bentinho e Capitu."
+            },
+            {
+                question: "Qual é o oceano mais extenso?",
+                options: ["Atlântico", "Índico", "Ártico", "Pacífico"],
+                correct: 3,
+                explanation: "O Oceano Pacífico é o maior e mais profundo oceano da Terra, cobrindo aproximadamente 165 milhões de km². Representa cerca de 46% da superfície oceânica mundial."
+            },
+            {
+                question: "Quantos continentes existem na Terra?",
+                options: ["5", "6", "7", "8"],
+                correct: 2,
+                explanation: "Existem 7 continentes na Terra: África, América do Norte, América do Sul, Antártida, Ásia, Europa e Oceania. Cada um possui características geográficas e culturais únicas."
+            },
+            {
+                question: "Qual é a língua mais falada no mundo?",
+                options: ["Inglês", "Espanhol", "Mandarim", "Hindi"],
+                correct: 2,
+                explanation: "O Mandarim (Chinês) é a língua mais falada do mundo, com mais de 1 bilhão de falantes nativos. É a língua oficial da China e de Taiwan."
+            },
+            {
+                question: "Quem foi o primeiro presidente do Brasil?",
+                options: ["Getúlio Vargas", "Deodoro da Fonseca", "Dom Pedro II", "Juscelino Kubitschek"],
+                correct: 1,
+                explanation: "Marechal Deodoro da Fonseca foi o primeiro presidente do Brasil (1889-1891), após a Proclamação da República em 15 de novembro de 1889."
+            },
+            {
+                question: "Qual é a fórmula química da água?",
+                options: ["H2O", "CO2", "O2", "H2O2"],
+                correct: 0,
+                explanation: "A água tem a fórmula química H2O, significando que cada molécula é composta por dois átomos de hidrogênio e um átomo de oxigênio."
+            },
+            {
+                question: "Em que país foram realizados os primeiros Jogos Olímpicos da Era Moderna?",
+                options: ["França", "Grécia", "Itália", "Inglaterra"],
+                correct: 1,
+                explanation: "Os primeiros Jogos Olímpicos da Era Moderna foram realizados em Atenas, Grécia, em 1896. Eles foram uma reinvenção dos antigos Jogos Olímpicos gregos."
+            },
+            {
+                question: "Qual é a montanha mais alta do mundo?",
+                options: ["K2", "Monte Kilimanjaro", "Monte Everest", "Monte Aconcágua"],
+                correct: 2,
+                explanation: "O Monte Everest é a montanha mais alta do mundo, com 8.848,86 metros de altitude. Localiza-se na cordilheira do Himalaia, na fronteira entre Nepal e Tibet."
+            },
+            {
+                question: "Quantos ossos tem o corpo humano adulto?",
+                options: ["186", "206", "226", "246"],
+                correct: 1,
+                explanation: "O corpo humano adulto possui 206 ossos. Bebês nascem com aproximadamente 270 ossos, mas muitos se fundem durante o crescimento."
+            },
+            {
+                question: "Qual é o menor país do mundo?",
+                options: ["Mônaco", "Vaticano", "San Marino", "Liechtenstein"],
+                correct: 1,
+                explanation: "O Vaticano é o menor país do mundo, com apenas 0,44 km² de área. É uma cidade-estado independente localizada dentro de Roma, Itália."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+        let userAnswers = [];
+
+        function loadQuestion() {
+            const question = questions[currentQuestion];
+            document.getElementById('questionNumber').textContent = `Questão ${currentQuestion + 1}`;
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('questionCounter').textContent = `Questão ${currentQuestion + 1} de ${questions.length}`;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <input type="radio" name="answer" id="option${index}" value="${index}" onchange="validateAnswer(${index})">
+                    <label for="option${index}">${option}</label>
+                    <span class="option-icon"></span>
+                `;
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            updateProgress();
+            document.getElementById('nextBtn').classList.remove('show');
+            document.getElementById('feedback').classList.remove('show');
+            answered = false;
+        }
+
+        function validateAnswer(selectedIndex) {
+            if (answered) return;
+
+            answered = true;
+            const question = questions[currentQuestion];
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+
+            userAnswers.push({
+                questionIndex: currentQuestion,
+                selectedIndex: selectedIndex,
+                isCorrect: selectedIndex === question.correct
+            });
+
+            options.forEach((option, index) => {
+                const radio = option.querySelector('input[type="radio"]');
+                const icon = option.querySelector('.option-icon');
+                radio.disabled = true;
+                option.classList.add('disabled');
+
+                if (index === question.correct) {
+                    option.classList.add('correct');
+                    icon.textContent = '✓';
+                } else if (index === selectedIndex) {
+                    option.classList.add('incorrect');
+                    icon.textContent = '✗';
+                }
+            });
+
+            if (selectedIndex === question.correct) {
+                score++;
+                feedback.className = 'feedback show correct';
+                feedback.textContent = '✓ Resposta correta! ' + question.explanation;
+            } else {
+                feedback.className = 'feedback show incorrect';
+                feedback.textContent = `✗ Resposta incorreta. A resposta correta é: ${question.options[question.correct]}. ${question.explanation}`;
+            }
+
+            updateScore();
+            document.getElementById('nextBtn').classList.add('show');
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressPercentage').textContent = Math.round(progress) + '%';
+        }
+
+        function updateScore() {
+            document.getElementById('scoreDisplay').textContent = `Pontuação: ${score} / ${questions.length}`;
+        }
+
+        function showResults() {
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('resultContainer').classList.add('show');
+
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('finalScore').textContent = `${score}/${questions.length}`;
+            document.getElementById('correctCount').textContent = score;
+            document.getElementById('incorrectCount').textContent = questions.length - score;
+            document.getElementById('percentage').textContent = percentage;
+
+            let message = '';
+            let icon = '';
+
+            if (percentage === 100) {
+                message = 'Perfeito! Você acertou todas!';
+                icon = '🏆';
+            } else if (percentage >= 80) {
+                message = 'Excelente! Ótimo desempenho!';
+                icon = '🌟';
+            } else if (percentage >= 60) {
+                message = 'Muito bem! Bom resultado!';
+                icon = '👏';
+            } else if (percentage >= 40) {
+                message = 'Bom esforço! Continue praticando!';
+                icon = '💪';
+            } else {
+                message = 'Continue estudando! Você vai melhorar!';
+                icon = '📚';
+            }
+
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultIcon').textContent = icon;
+
+            generateReviewTable();
+        }
+
+        function generateReviewTable() {
+            const tableBody = document.getElementById('reviewTableBody');
+            tableBody.innerHTML = '';
+
+            userAnswers.forEach(answer => {
+                const question = questions[answer.questionIndex];
+                const row = document.createElement('tr');
+
+                const questionCell = document.createElement('td');
+                questionCell.className = 'question-number-cell';
+                questionCell.textContent = `${answer.questionIndex + 1}. ${question.question}`;
+
+                const answerCell = document.createElement('td');
+                answerCell.textContent = question.options[answer.selectedIndex];
+
+                const statusCell = document.createElement('td');
+                if (answer.isCorrect) {
+                    statusCell.className = 'status-correct';
+                    statusCell.textContent = '✓ CORRETA';
+                } else {
+                    statusCell.className = 'status-incorrect';
+                    statusCell.textContent = `✗ INCORRETA\nCorreto: ${question.options[question.correct]}`;
+                }
+
+                const explanationCell = document.createElement('td');
+                explanationCell.textContent = question.explanation;
+
+                row.appendChild(questionCell);
+                row.appendChild(answerCell);
+                row.appendChild(statusCell);
+                row.appendChild(explanationCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            answered = false;
+            userAnswers = [];
+            document.getElementById('quizSection').style.display = 'block';
+            document.getElementById('resultContainer').classList.remove('show');
+            updateScore();
+            loadQuestion();
+        }
+
+        loadQuestion();
+        updateScore();
+    </script>
+</body>
+</html>
+
+
